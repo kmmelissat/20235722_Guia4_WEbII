@@ -1,12 +1,11 @@
-const initialBudget=()=>{
-    const localStorageBudget=localStorage.getItem('budget')
-    return localStorageBudget? parseFloat(localStorageBudget):0
+const initialBudget = () => {
+    const localStorageBudget = localStorage.getItem('budget')
+    return localStorageBudget ? parseFloat(localStorageBudget) : 0
 }
 
-const localStorageExpenses=()=>{
-    const localStorageExpenses=localStorage.getItem('expenses')
-    console.log(localStorageExpenses)
-    return localStorageExpenses === undefined ? JSON.parse(localStorageExpenses):[]
+const localStorageExpenses = () => {
+    const localStorageExpenses = localStorage.getItem('expenses')
+    return localStorageExpenses ? JSON.parse(localStorageExpenses) : []
 }
 
 export const initialState = {
@@ -17,39 +16,57 @@ export const initialState = {
     currentCategory: ""
 }
 
+const saveExpensesToLocalStorage = (expenses) => {
+    localStorage.setItem('expenses', JSON.stringify(expenses))
+}
 export const budgetReducer = (state, action) => {
+    let newState;
     switch (action.type) {
         case "add-budget":
-            return { ...state, budget: action.payload.budget }
+            localStorage.setItem('budget', action.payload.budget)
+            newState = { ...state, budget: action.payload.budget }
+            break;
         case "show-modal":
-            return { ...state, modal: true }
+            newState = { ...state, modal: true }
+            break;
         case "close-modal":
-            return { ...state, modal: false, editingId: "" }
+            newState = { ...state, modal: false, editingId: "" }
+            break;
         case "add-expense":
-            return { ...state, expenses: [...state.expenses, { ...action.payload.expense, id: new Date().getTime() }], modal: false }
+            newState = { ...state, expenses: [...state.expenses, { ...action.payload.expense, id: new Date().getTime() }], modal: false }
+            saveExpensesToLocalStorage(newState.expenses)
+            break;
         case "remove-expense":
-            return { ...state, expenses: state.expenses.filter(expense => expense.id != action.payload.id) }
+            newState = { ...state, expenses: state.expenses.filter(expense => expense.id != action.payload.id) }
+            saveExpensesToLocalStorage(newState.expenses)
+            break;
         case "get-expense-by-id":
-            return { ...state, editingId: action.payload.id, modal: true }
+            newState = { ...state, editingId: action.payload.id, modal: true }
+            break;
         case "update-expense":
-            return {
+            newState = {
                 ...state,
                 expenses: state.expenses.map(expense => expense.id === action.payload.expense.id ? action.payload.expense : expense),
                 modal: false,
                 editingId: ""
             }
+            saveExpensesToLocalStorage(newState.expenses)
+            break;
         case "add-filter-category":
-            return { ...state, currentCategory: action.payload.categoryId }
+            newState = { ...state, currentCategory: action.payload.categoryId }
+            break;
         case "reset-app": 
             localStorage.clear();
-            return {
+            newState = {
                 budget: 0,
                 modal: false,
                 expenses: [],
                 editingId: "",
                 currentCategory: ""
             }
+            break;
         default:
-            return state;
+            newState = state;
     }
+    return newState;
 }
